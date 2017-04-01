@@ -1,16 +1,13 @@
 /*
   Copyright (c) 2009 Dave Gamble
-
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
   in the Software without restriction, including without limitation the rights
   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
   copies of the Software, and to permit persons to whom the Software is
   furnished to do so, subject to the following conditions:
-
   The above copyright notice and this permission notice shall be included in
   all copies or substantial portions of the Software.
-
   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -39,6 +36,7 @@ const char *cJSON_GetErrorPtr(void)
     return global_ep;
 }
 
+#if 0
 /* case insensitive strcmp */
 static int cJSON_strcasecmp(const char *s1, const char *s2)
 {
@@ -60,6 +58,20 @@ static int cJSON_strcasecmp(const char *s1, const char *s2)
 
     return tolower(*(const unsigned char *)s1) - tolower(*(const unsigned char *)s2);
 }
+#else
+static int cJSON_strcasecmp(const char *s1, const char *s2)
+{
+    if (!s1)
+    {
+        return (s1 == s2) ? 0 : 1; /* both NULL? */
+    }
+    if (!s2)
+    {
+        return 1;
+    }
+    return strcmp(s1, s2);
+}
+#endif
 
 static void *(*cJSON_malloc)(size_t sz) = malloc;
 static void (*cJSON_free)(void *ptr) = free;
@@ -583,14 +595,17 @@ static const char *parse_string(cJSON *item, const char *str, const char **ep)
                             /* 10xxxxxx */
                             *--ptr2 = ((uc | 0x80) & 0xBF);
                             uc >>= 6;
+                            /* no break */
                         case 3:
                             /* 10xxxxxx */
                             *--ptr2 = ((uc | 0x80) & 0xBF);
                             uc >>= 6;
+                            /* no break */
                         case 2:
                             /* 10xxxxxx */
                             *--ptr2 = ((uc | 0x80) & 0xBF);
                             uc >>= 6;
+                            /* no break */
                         case 1:
                             /* depending on the length in bytes this determines the
                              * encoding ofthe first UTF8 byte */
@@ -1673,12 +1688,15 @@ void   cJSON_AddItemToObject(cJSON *object, const char *string, cJSON *item)
         return;
     }
 
-    /* free old key and set new one */
-    if (item->string)
+    if (item->string != string)
     {
-        cJSON_free(item->string);
+		/* free old key and set new one */
+		if (item->string)
+		{
+			cJSON_free(item->string);
+		}
+		item->string = cJSON_strdup(string);
     }
-    item->string = cJSON_strdup(string);
 
     cJSON_AddItemToArray(object,item);
 }
